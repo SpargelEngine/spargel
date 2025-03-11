@@ -21,3 +21,6 @@ CMakeUserPresets.json
 
 # swift
 .build/
+
+# python
+__pycache__/
