@@ -12,6 +12,7 @@ spargel_add_executable(
         driver.cpp
     DEPS
         base
+        resource
 )
 
 spargel_add_executable(

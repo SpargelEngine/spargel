@@ -4,8 +4,9 @@
 
 using spargel::lang::Lexer;
 using spargel::lang::TokenKind;
+using spargel::lang::Token;
 using spargel::lang::KeywordKind;
-using spargel::lang::LexError;
+using spargel::lang::LexStatus;
 
 TEST(Lexer_Basic) {
     Lexer l("def hello()\n  print(\"hello, world\")\n");
@@ -27,93 +28,98 @@ TEST(Lexer_Basic) {
 
 TEST(Lexer_Null) {
     Lexer l("\0hello");
-    auto x = l.lex();
-    spargel_check(x.isRight());
-    spargel_check(x.right() == LexError::unexpected_null_byte);
+    Token tok;
+    auto r = l.lex(tok);
+    spargel_check(r == LexStatus::unexpected_null_byte);
 }
 
 TEST(Lexer_Newline) {
     Lexer l("\n\r\n\rxyz\n");
-    auto x = l.lex();
+    Token tok;
+    auto r = l.lex(tok);
     spargel_check(!l.isEnd() && l.peekByte() == 'x');
-    spargel_check(x.isLeft());
-    spargel_check(x.left().kind == TokenKind::newline);
-    spargel_check(x.left().length() == 4);
-    spargel_check(x.left().toStringView() == "\n\r\n\r");
+    spargel_check(r == LexStatus::success);
+    spargel_check(tok.kind == TokenKind::newline);
+    spargel_check(tok.length() == 4);
+    spargel_check(tok.content == "\n\r\n\r");
 }
 
 TEST(Lexer_Whitespace) {
     Lexer l(" \t  xyz\n");
-    auto x = l.lex();
+    Token tok;
+    auto r = l.lex(tok);
     spargel_check(!l.isEnd() && l.peekByte() == 'x');
-    spargel_check(x.isLeft());
-    spargel_check(x.left().kind == TokenKind::whitespace);
-    spargel_check(x.left().length() == 4);
-    spargel_check(x.left().toStringView() == " \t  ");
+    spargel_check(r == LexStatus::success);
+    spargel_check(tok.kind == TokenKind::whitespace);
+    spargel_check(tok.length() == 4);
+    spargel_check(tok.content == " \t  ");
 }
 
 TEST(Lexer_LineComment) {
     Lexer l("// hello\nxyz");
-    auto x = l.lex();
+    Token tok;
+    auto r = l.lex(tok);
     spargel_check(!l.isEnd() && l.peekByte() == '\n');
-    spargel_check(x.isLeft());
-    spargel_check(x.left().kind == TokenKind::line_comment);
-    spargel_check(x.left().length() == 6); // " hello"
-    spargel_check(x.left().toStringView() == " hello");
+    spargel_check(r == LexStatus::success);
+    spargel_check(tok.kind == TokenKind::line_comment);
+    spargel_check(tok.length() == 6); // " hello"
+    spargel_check(tok.content == " hello");
 }
 
 TEST(Lexer_LineComment_EOF) {
     Lexer l("// hello");
-    auto x = l.lex();
+    Token tok;
+    auto r = l.lex(tok);
     spargel_check(l.isEnd());
-    spargel_check(x.isLeft());
-    spargel_check(x.left().kind == TokenKind::line_comment);
-    spargel_check(x.left().length() == 6); // " hello"
-    spargel_check(x.left().toStringView() == " hello");
+    spargel_check(r == LexStatus::success);
+    spargel_check(tok.kind == TokenKind::line_comment);
+    spargel_check(tok.length() == 6); // " hello"
+    spargel_check(tok.content == " hello");
 }
 
 TEST(Lexer_Paren) {
     Lexer l("( )");
-    auto x = l.lex();
-    spargel_check(x.isLeft());
-    spargel_check(x.left().kind == TokenKind::left_paren);
-    spargel_check(x.left().toStringView() == "(");
-    l.lex();
-    auto y = l.lex();
-    spargel_check(y.isLeft());
-    spargel_check(y.left().kind == TokenKind::right_paren);
-    spargel_check(y.left().toStringView() == ")");
+    Token tok;
+    auto r = l.lex(tok);
+    spargel_check(r == LexStatus::success);
+    spargel_check(tok.kind == TokenKind::left_paren);
+    spargel_check(tok.content == "(");
+    l.lex(tok);
+    r = l.lex(tok);
+    spargel_check(r == LexStatus::success);
+    spargel_check(tok.kind == TokenKind::right_paren);
+    spargel_check(tok.content == ")");
 }
 
 TEST(Lexer_Identifer) {
     Lexer l("hello _world");
-    auto x = l.lex();
-    spargel_check(x.isLeft());
-    spargel_check(x.left().kind == TokenKind::identifier);
-    spargel_check(x.left().toStringView() == "hello");
-    spargel_check(!x.left().isKeywordLike());
-    l.lex();
-    auto y = l.lex();
-    spargel_check(y.isLeft());
-    spargel_check(y.left().kind == TokenKind::identifier);
-    spargel_check(y.left().toStringView() == "_world");
+    Token tok;
+    auto r = l.lex(tok);
+    spargel_check(r == LexStatus::success);
+    spargel_check(tok.kind == TokenKind::identifier);
+    spargel_check(tok.content == "hello");
+    spargel_check(!tok.identifier().keyword_like);
+    l.lex(tok);
+    r = l.lex(tok);
+    spargel_check(r == LexStatus::success);
+    spargel_check(tok.kind == TokenKind::identifier);
+    spargel_check(tok.content == "_world");
 }
 
 TEST(Lexer_Keyword) {
     Lexer l("import Builtins\ndefine main() { return }");
-    auto x = l.lex();
-    spargel_check(x.isLeft());
-    spargel_check(x.left().kind == TokenKind::identifier);
-    spargel_check(x.left().toStringView() == "import");
-    spargel_check(x.left().isKeywordLike());
-    spargel_check(x.left().maybe_keyword.hasValue());
-    spargel_check(x.left().maybe_keyword.value() == KeywordKind::import);
-    l.lex(); l.lex(); l.lex();
-    auto y = l.lex();
-    spargel_check(y.isLeft());
-    spargel_check(y.left().kind == TokenKind::identifier);
-    spargel_check(y.left().toStringView() == "define");
-    spargel_check(y.left().isKeywordLike());
-    spargel_check(y.left().maybe_keyword.hasValue());
-    spargel_check(y.left().maybe_keyword.value() == KeywordKind::define);
+    Token tok;
+    auto r = l.lex(tok);
+    spargel_check(r == LexStatus::success);
+    spargel_check(tok.kind == TokenKind::identifier);
+    spargel_check(tok.content == "import");
+    spargel_check(tok.identifier().keyword_like);
+    spargel_check(tok.identifier().keyword_candidate == KeywordKind::import);
+    l.lex(tok); l.lex(tok); l.lex(tok);
+    r = l.lex(tok);
+    spargel_check(r == LexStatus::success);
+    spargel_check(tok.kind == TokenKind::identifier);
+    spargel_check(tok.content == "define");
+    spargel_check(tok.identifier().keyword_like);
+    spargel_check(tok.identifier().keyword_candidate == KeywordKind::define);
 }

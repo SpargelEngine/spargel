@@ -21,46 +21,44 @@ namespace spargel::lang {
 
     }
 
-    Lexer::LexResult Lexer::lex() {
-        if (isEnd()) return base::Right{LexError::end_of_buffer};
+    LexStatus Lexer::lex(Token& out) {
+        if (isEnd()) return LexStatus::end_of_buffer;
 
         char c = peekByte();
 
-        auto form_token = [start = _cur, this](TokenKind k) {
-            return Token(k, start, _cur);
-        };
+        LexState start = saveState();
 
         switch (c) {
             
             // null byte
             case 0:
-                return base::Right{LexError::unexpected_null_byte};
+                return LexStatus::unexpected_null_byte;
 
             // newline
             case '\n':
             case '\r':
-                return lexNewline();
+                return lexNewline(out);
 
             // whitespace
             case ' ':
             case '\t':
-                return lexWhitespace();
+                return lexWhitespace(out);
 
             case '/': {
                 char next = peekByte(1);
                 if (next == '/') {
-                    return lexLineComment();
+                    return lexLineComment(out);
                 }
                 // TODO
                 break;
             }
 
-            case '(': { advance(); return base::Left{form_token(TokenKind::left_paren)}; }
-            case ')': { advance(); return base::Left{form_token(TokenKind::right_paren)}; }
-            case '{': { advance(); return base::Left{form_token(TokenKind::left_brace)}; }
-            case '}': { advance(); return base::Left{form_token(TokenKind::right_brace)}; }
-            case '@': { advance(); return base::Left{form_token(TokenKind::at)}; }
-            case ',': { advance(); return base::Left{form_token(TokenKind::comma)}; }
+            case '(': { advance(); formToken(out, TokenKind::left_paren,  start); return LexStatus::success; }
+            case ')': { advance(); formToken(out, TokenKind::right_paren, start); return LexStatus::success; }
+            case '{': { advance(); formToken(out, TokenKind::left_brace,  start); return LexStatus::success; }
+            case '}': { advance(); formToken(out, TokenKind::right_brace, start); return LexStatus::success; }
+            case '@': { advance(); formToken(out, TokenKind::at,          start); return LexStatus::success; }
+            case ',': { advance(); formToken(out, TokenKind::comma,       start); return LexStatus::success; }
             
             case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': case 'G':
             case 'H': case 'I': case 'J': case 'K': case 'L': case 'M': case 'N':
@@ -71,62 +69,69 @@ namespace spargel::lang {
             case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u':
             case 'v': case 'w': case 'x': case 'y': case 'z':
             case '_':
-                return lexIdentifier();
+                return lexIdentifier(out);
 
             default:
                 break;
         }
 
-        return base::Right{LexError::internal_error};
+        return LexStatus::internal_error;
     }
 
-    Lexer::LexResult Lexer::lexNewline() {
+    LexStatus Lexer::lexNewline(Token& out) {
         spargel_check(isNewline(peekByte()));
 
-        char const* begin = _cur;
+        LexState start = saveState();
+
         eatWhile([](char c) {
             return isNewline(c);
         });
-        return base::Left{Token(TokenKind::newline, begin, _cur)};
+
+        formToken(out, TokenKind::newline, start);
+        return LexStatus::success;
     }
 
-    Lexer::LexResult Lexer::lexWhitespace() {
+    LexStatus Lexer::lexWhitespace(Token& out) {
         spargel_check(isWhitespace(peekByte()));
 
-        char const* begin = _cur;
+        LexState start = saveState();
+
         eatWhile([](char c) {
             return isWhitespace(c);
         });
-        return base::Left{Token(TokenKind::whitespace, begin, _cur)};
+
+        formToken(out, TokenKind::whitespace, start);
+        return LexStatus::success;
     }
 
-    Lexer::LexResult Lexer::lexLineComment() {
+    LexStatus Lexer::lexLineComment(Token& out) {
         spargel_check(peekByte() == '/' && peekByte(1) == '/');
         
         advance(2);
 
-        char const* begin = _cur;
+        LexState start = saveState();
         eatWhile([](char c) {
             return !isNewline(c);
         });
-        return base::Left{Token(TokenKind::line_comment, begin, _cur)};
+
+        formToken(out, TokenKind::line_comment, start);
+        return LexStatus::success;
     }
 
-    Lexer::LexResult Lexer::lexIdentifier() {
+    LexStatus Lexer::lexIdentifier(Token& out) {
         spargel_check(isIdentifierBegin(peekByte()));
 
-        char const* begin = _cur;
+        LexState start = saveState();
         eatWhile([](char c) {
             return isIdentifierContinuation(c);
         });
 
-        base::string_view ident(begin, _cur);
-        base::Optional<KeywordKind> keyword;
+        formToken(out, TokenKind::identifier, start);
 
-        if (ident == "import") { keyword = base::makeOptional<KeywordKind>(KeywordKind::import); }
-        if (ident == "define") { keyword = base::makeOptional<KeywordKind>(KeywordKind::define); }
-        
-        return base::Left{Token(TokenKind::identifier, begin, _cur, keyword)};
+        if (out.content == "import") { out.identifier().keyword_like = true; out.identifier().keyword_candidate = KeywordKind::import; }
+        if (out.content == "define") { out.identifier().keyword_like = true; out.identifier().keyword_candidate = KeywordKind::define; }
+
+        return LexStatus::success;
     }
 
     base::Either<ASTDeclaration, ParseError> Parser::parseDeclaration() {

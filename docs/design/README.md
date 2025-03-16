@@ -1,8 +1,21 @@
-# Spargel XXX Language
+# Language Design
 
-XXX = shading/scripting/...
+We need a better language for shaders, scripts, and the engine itself.
 
-## Examples
+## Table of Contents
+
+- [Introduction](#introduction)
+  - [Tour](#tour)
+  - [Notations](#notations)
+- [Lexical Structure](#lexical-structure)
+  - [Source Format](#source-format)
+  - [Whitespace](#whitespace)
+  - [Comments](#comments)
+  - [Identifiers](#identifiers)
+
+## Introduction
+
+### Tour
 
 ```
 // this is a comment

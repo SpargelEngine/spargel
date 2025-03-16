@@ -1,5 +1,6 @@
 #pragma once
 
+#include <spargel/base/check.h>
 #include <spargel/base/either.h>
 #include <spargel/base/optional.h>
 #include <spargel/base/string_view.h>
@@ -50,26 +51,69 @@ namespace spargel::lang {
         define,
     };
 
-    struct Token {
-        TokenKind kind;
-        char const* begin;
-        char const* end;
-        base::Optional<KeywordKind> maybe_keyword;
+    struct SourceLocation {
+        int line;
+        int column;
 
-        Token(TokenKind k, char const* b, char const* e) : Token(k, b, e, base::nullopt) {}
-
-        Token(TokenKind k, char const* b, char const* e, base::Optional<KeywordKind> keyword) : kind{k}, begin{b}, end{e}, maybe_keyword(keyword) {
-            spargel_check(b <= e);
+        void advance(char c) {
+            if (c == '\n') {
+                line++;
+                column = 1;
+            } else {
+                column++;
+            }
         }
-
-        usize length() const { return end - begin; }
-
-        base::string_view toStringView() const { return base::string_view(begin, end); }
-
-        bool isKeywordLike() const { return maybe_keyword.hasValue(); }
     };
 
-    enum class LexError {
+    struct SourceRange {
+        SourceLocation start;
+        SourceLocation end;
+    };
+
+    struct Token {
+        TokenKind kind;
+        base::string_view content;
+        SourceRange range;
+
+        union {
+            struct {
+                bool doc;
+            } line_comment;
+            struct {
+                bool keyword_like;
+                KeywordKind keyword_candidate;
+            } identifier;
+        } data;
+
+        auto& line_comment() { return data.line_comment; }
+        auto& identifier() { return data.identifier; }
+
+        void init(TokenKind k) {
+            kind = k;
+            switch (kind) {
+                case TokenKind::line_comment:
+                    line_comment().doc = false;
+                    break;
+                case TokenKind::identifier:
+                    identifier().keyword_like = false;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        usize length() const { return content.length(); }
+
+        void setKeywordCandidate(KeywordKind k) {
+            spargel_check(kind == TokenKind::identifier);
+            identifier().keyword_like = true;
+            identifier().keyword_candidate = k;
+        }
+    };
+
+    enum class LexStatus {
+        success,
+
         // The cursor has reached the end of the buffer. So there is nothing to lex.
         end_of_buffer,
 
@@ -87,9 +131,13 @@ namespace spargel::lang {
     //
     class Lexer {
     public:
-        using LexResult = base::Either<Token, LexError>;
+        struct LexState {
+            char const* cur;
+            SourceLocation loc;
+        };
 
-        Lexer(base::string_view source) : _begin{source.begin()}, _end{source.end()}, _cur{source.begin()} {}
+
+        Lexer(base::string_view source) : _begin{source.begin()}, _end{source.end()}, _cur{source.begin()}, _loc(1, 1) {}
 
         // Whether the end of buffer is reached.
         bool isEnd() const { return _cur >= _end; }
@@ -113,11 +161,11 @@ namespace spargel::lang {
             return *(_cur + n);
         }
 
-        LexResult lex();
-        LexResult lexNewline();
-        LexResult lexWhitespace();
-        LexResult lexLineComment();
-        LexResult lexIdentifier();
+        LexStatus lex(Token& out);
+        LexStatus lexNewline(Token& out);
+        LexStatus lexWhitespace(Token& out);
+        LexStatus lexLineComment(Token& out);
+        LexStatus lexIdentifier(Token& out);
         
         // Keep advancing until the condition on the character is false.
         void eatWhile(auto&& f) {
@@ -130,17 +178,24 @@ namespace spargel::lang {
         // Reset state.
         void reset() { _cur = _begin; }
 
+        LexState saveState() const { return LexState(_cur, _loc); }
+        void restoreState(LexState s) {
+            spargel_check(s.cur >= _begin && s.cur <= _end);
+            _cur = s.cur;
+            _loc = s.loc;
+        }
+
+        void formToken(Token& out, TokenKind kind, LexState start) {
+            out.init(kind);
+            out.content = base::string_view(start.cur, _cur);
+            out.range = SourceRange(start.loc, _loc);
+        }
+
     private:
         char const* _begin;
         char const* _end;
         char const* _cur;
-    };
-
-    class SourceRange {
-    public:
-    private:
-        char const* _begin;
-        char const* _end;
+        SourceLocation _loc;
     };
 
     class ASTNodeBase {
