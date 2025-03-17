@@ -1,0 +1,9 @@
+# one triangle
+1 # number of faces
+3 # number of vertices
+# faces
+0 1 2
+# vertices
+-100.5 -0.5 -100.5
+50.1 100.3 -50.2
+50.7 -50.9 100.6

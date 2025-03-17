@@ -1,0 +1,27 @@
+# tmp
+*.tmp
+tmp*
+
+# IDE
+*.swp
+.idea
+.vs
+.vscode
+.cache
+
+# Build
+/build*
+CMakeUserPresets.json
+
+# Mac
+.DS_Store
+
+# jujutsu
+.jj
+
+# swift
+.build/
+
+# docker
+.git
+/android

@@ -1,0 +1,4 @@
+services:
+  spargel:
+    build:
+      context: ..

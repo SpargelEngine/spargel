@@ -1,0 +1,15 @@
+{
+    "name": "sample_hello_world",
+    "assets": [
+        {
+            "target": "/resources/data.txt",
+            "path": "./assets/data.txt"
+        }
+    ],
+    "executables": [
+        {
+            "name": "sample_hello_world",
+            "cmake_target_name": "sample_hello_world"
+        }
+    ]
+}

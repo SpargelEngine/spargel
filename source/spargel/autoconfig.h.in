@@ -1,0 +1,44 @@
+#pragma once
+
+/*
+ * Platform Type
+ */
+
+#cmakedefine01 SPARGEL_IS_ANDROID
+#cmakedefine01 SPARGEL_IS_EMSCRIPTEN
+#cmakedefine01 SPARGEL_IS_LINUX
+#cmakedefine01 SPARGEL_IS_MACOS
+#cmakedefine01 SPARGEL_IS_WINDOWS
+
+/*
+ * Platform-Specific
+ */
+
+#if SPARGEL_IS_LINUX
+#cmakedefine01 SPARGEL_LINUX_IS_DESKTOP
+#endif
+
+#if SPARGEL_IS_MACOS
+#cmakedefine01 SPARGEL_ENABLE_METAL
+#endif
+
+#if SPARGEL_IS_WINDOWS
+#cmakedefine01 SPARGEL_GPU_ENABLE_DIRECTX
+#endif
+
+/*
+ * General
+ */
+
+#cmakedefine01 SPARGEL_ENABLE_ASSERT
+
+#cmakedefine01 SPARGEL_ENABLE_LOG_ANSI_COLOR
+
+#cmakedefine01 SPARGEL_ENABLE_OPENGL
+
+#cmakedefine01 SPARGEL_GPU_ENABLE_VULKAN
+
+#cmakedefine01 SPARGEL_USE_FILE_MMAP
+
+// Trace every allocation.
+// #cmakedefine01 SPARGEL_TRACE_ALLOCATION

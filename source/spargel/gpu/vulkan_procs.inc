@@ -1,0 +1,104 @@
+#if defined(VULKAN_LIBRARY_PROC)
+
+VULKAN_LIBRARY_PROC(vkGetInstanceProcAddr)
+
+#endif
+
+#if defined(VULKAN_GENERAL_PROC)
+
+VULKAN_GENERAL_PROC(vkEnumerateInstanceLayerProperties)
+VULKAN_GENERAL_PROC(vkEnumerateInstanceExtensionProperties)
+
+VULKAN_GENERAL_PROC(vkCreateInstance)
+
+#endif
+
+#if defined(VULKAN_INSTANCE_PROC)
+
+VULKAN_INSTANCE_PROC(vkCreateDebugUtilsMessengerEXT)
+VULKAN_INSTANCE_PROC(vkCreateDevice)
+VULKAN_INSTANCE_PROC(vkDestroyDebugUtilsMessengerEXT)
+VULKAN_INSTANCE_PROC(vkDestroyInstance)
+VULKAN_INSTANCE_PROC(vkDestroySurfaceKHR)
+VULKAN_INSTANCE_PROC(vkEnumerateDeviceExtensionProperties)
+VULKAN_INSTANCE_PROC(vkEnumeratePhysicalDevices)
+VULKAN_INSTANCE_PROC(vkGetDeviceProcAddr)
+VULKAN_INSTANCE_PROC(vkGetPhysicalDeviceFeatures)
+VULKAN_INSTANCE_PROC(vkGetPhysicalDeviceMemoryProperties)
+VULKAN_INSTANCE_PROC(vkGetPhysicalDeviceProperties)
+VULKAN_INSTANCE_PROC(vkGetPhysicalDeviceQueueFamilyProperties)
+VULKAN_INSTANCE_PROC(vkGetPhysicalDeviceSurfaceCapabilitiesKHR)
+VULKAN_INSTANCE_PROC(vkGetPhysicalDeviceSurfaceFormatsKHR)
+VULKAN_INSTANCE_PROC(vkGetPhysicalDeviceSurfacePresentModesKHR)
+VULKAN_INSTANCE_PROC(vkGetPhysicalDeviceSurfaceSupportKHR)
+
+#if SPARGEL_IS_ANDROID
+VULKAN_INSTANCE_PROC(vkCreateAndroidSurfaceKHR)
+#endif
+#if SPARGEL_IS_LINUX
+VULKAN_INSTANCE_PROC(vkCreateWaylandSurfaceKHR)
+VULKAN_INSTANCE_PROC(vkCreateXcbSurfaceKHR)
+#endif
+#if SPARGEL_IS_MACOS
+VULKAN_INSTANCE_PROC(vkCreateMetalSurfaceEXT)
+#endif
+#if SPARGEL_IS_WINDOWS
+VULKAN_INSTANCE_PROC(vkCreateWin32SurfaceKHR)
+#endif
+
+#endif
+
+#if defined(VULKAN_DEVICE_PROC)
+
+VULKAN_DEVICE_PROC(vkAcquireNextImageKHR)
+VULKAN_DEVICE_PROC(vkAllocateCommandBuffers)
+VULKAN_DEVICE_PROC(vkAllocateDescriptorSets)
+VULKAN_DEVICE_PROC(vkAllocateMemory)
+VULKAN_DEVICE_PROC(vkBeginCommandBuffer)
+VULKAN_DEVICE_PROC(vkBindBufferMemory)
+VULKAN_DEVICE_PROC(vkCmdBeginRenderPass)
+VULKAN_DEVICE_PROC(vkCmdBindDescriptorSets)
+VULKAN_DEVICE_PROC(vkCmdBindPipeline)
+VULKAN_DEVICE_PROC(vkCmdClearColorImage)
+VULKAN_DEVICE_PROC(vkCmdDispatch)
+VULKAN_DEVICE_PROC(vkCmdEndRenderPass)
+VULKAN_DEVICE_PROC(vkCreateBuffer)
+VULKAN_DEVICE_PROC(vkCreateCommandPool)
+VULKAN_DEVICE_PROC(vkCreateComputePipelines)
+VULKAN_DEVICE_PROC(vkCreateDescriptorPool)
+VULKAN_DEVICE_PROC(vkCreateDescriptorSetLayout)
+VULKAN_DEVICE_PROC(vkCreateFence)
+VULKAN_DEVICE_PROC(vkCreateFramebuffer)
+VULKAN_DEVICE_PROC(vkCreateImageView)
+VULKAN_DEVICE_PROC(vkCreatePipelineLayout)
+VULKAN_DEVICE_PROC(vkCreateRenderPass)
+VULKAN_DEVICE_PROC(vkCreateSemaphore)
+VULKAN_DEVICE_PROC(vkCreateShaderModule)
+VULKAN_DEVICE_PROC(vkCreateSwapchainKHR)
+VULKAN_DEVICE_PROC(vkDestroyCommandPool)
+VULKAN_DEVICE_PROC(vkDestroyDevice)
+VULKAN_DEVICE_PROC(vkDestroyFence)
+VULKAN_DEVICE_PROC(vkDestroyFramebuffer)
+VULKAN_DEVICE_PROC(vkDestroyImageView)
+VULKAN_DEVICE_PROC(vkDestroyRenderPass)
+VULKAN_DEVICE_PROC(vkDestroySemaphore)
+VULKAN_DEVICE_PROC(vkDestroyShaderModule)
+VULKAN_DEVICE_PROC(vkDestroySwapchainKHR)
+VULKAN_DEVICE_PROC(vkDeviceWaitIdle)
+VULKAN_DEVICE_PROC(vkEndCommandBuffer)
+VULKAN_DEVICE_PROC(vkGetBufferMemoryRequirements)
+VULKAN_DEVICE_PROC(vkGetDeviceQueue)
+VULKAN_DEVICE_PROC(vkGetSwapchainImagesKHR)
+VULKAN_DEVICE_PROC(vkMapMemory)
+VULKAN_DEVICE_PROC(vkQueuePresentKHR)
+VULKAN_DEVICE_PROC(vkQueueSubmit)
+VULKAN_DEVICE_PROC(vkResetCommandBuffer)
+VULKAN_DEVICE_PROC(vkResetFences)
+VULKAN_DEVICE_PROC(vkUpdateDescriptorSets)
+VULKAN_DEVICE_PROC(vkWaitForFences)
+
+// requires synchronization2
+// VULKAN_DEVICE_PROC(vkQueueSubmit2KHR)
+// VULKAN_DEVICE_PROC(vkCmdPipelineBarrier2KHR)
+
+#endif
