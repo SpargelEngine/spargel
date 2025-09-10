@@ -3,19 +3,6 @@
 #include "spargel/base/types.h"
 
 namespace spargel::gpu {
-
-    // This is the allocator for device memory.
-    //
-    // The maximal memory allocation count (maxMemoryAllocationCount) returned by Vulkan drivers is
-    // still 4096 on half of the devices. So we should have few allocations of large device memory
-    // blocks, and then suballocate from these blocks. It's then our task to handle memory
-    // fragmentation.
-    //
-    // Two algorithms:
-    // - Bump allocator.
-    // - TLSF (two-level seggregated fit) allocator.
-    //
-
     // The TLSF Allocator
     //
     // One instance manages a sequence of memory blocks, which are binned into a two levels.
@@ -65,24 +52,18 @@ namespace spargel::gpu {
             u8 bin_id;
             u8 subbin_id;
         };
-
-        // BinResult binDown(usize size) {
-        //     spargel_assert(size > 0);
-
-        //     u8 bin_id;
-        //     if (size < (1 << linear_bits)) {
-        //         bin_id = 0;
-        //     } else {
-        //         bin_id = base::GetMostSignificantBit(size) - (linear_bits - 1);
-        //     }
-        //     u8 subbin_id = size >> (bin_id - subbin_bits);
-        //     return {bin_id, subbin_id};
-        // }
-
-        // BinResult binUp(usize size) {}
-
-        // u64 _first_bitset = 0;
-        // u64 _second_bitsets[subbin_count] = {0};
     };
 
 }  // namespace spargel::gpu
+
+// This is the allocator for device memory.
+//
+// The maximal memory allocation count (maxMemoryAllocationCount) returned by Vulkan drivers is
+// still 4096 on half of the devices. So we should have few allocations of large device memory
+// blocks, and then suballocate from these blocks. It's then our task to handle memory
+// fragmentation.
+//
+// Two algorithms:
+// - Bump allocator.
+// - TLSF (two-level seggregated fit) allocator.
+//
