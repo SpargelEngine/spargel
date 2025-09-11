@@ -1,5 +1,6 @@
 #pragma once
 
+#include "spargel/base/inline_array.h"
 #include "spargel/base/types.h"
 
 namespace spargel::gpu {
@@ -36,22 +37,51 @@ namespace spargel::gpu {
     // >= 4.
     //
     //
-    // size   | [2^0, 2^8) | [2^8, 2^9) | [2^9, 2^10) | ...
-    // bin_id |     0      |      1     |       2     | ...
+    // size   | [2^0, 2^8) | [2^8, 2^9) | [2^9, 2^10) | ... | [2^63, 2^64)
+    // bin_id |     0      |      1     |      2      | ... |
     //
-    class TlsfAllocator {
+    struct TlsfBinner {
+        // The first bin has size `2 ** linear_bits`.
+        // TODO: Maybe this should be 7.
         static constexpr u8 linear_bits = 8;
+        static constexpr u64 min_alloc_size = u64(1) << linear_bits;
         static constexpr u8 subbin_bits = 5;
+        // The number of subbin every bin holds.
         static constexpr u8 subbin_count = 1 << subbin_bits;
+        // This is the number of total bins, including the linear one (which is the first one).
+        // NOTE: The maximal size is `2 ** 64`.
+        static constexpr u8 bin_count = 64 - linear_bits + 1;
 
-    public:
-        TlsfAllocator() = default;
-
-    private:
         struct BinResult {
             u8 bin_id;
             u8 subbin_id;
         };
+
+        // Find the smallest (sub)bin larger than the given size.
+        BinResult binUp(usize size) {
+            spargel_check(size != 0);
+            // The unadjusted id in the range [8, 64)
+            auto bin_id = 63 - __builtin_clzl(size | min_alloc_size);
+            // log_2 of the size of each subbin in the chosen bin.
+            auto log2_subbin_size = bin_id - subbin_bits;
+            // size of each subbin - 1
+            auto delta = (u64(1) << log2_subbin_size) - 1;
+            // TODO: Wrapped or saturated?
+            auto rounded = size + delta;
+            auto subbin_id = rounded >> log2_subbin_size;
+
+            auto adjusted_bin_id = u64(bin_id - linear_bits) + (subbin_id >> subbin_bits);
+            // Equivalent: `subbin_id % subbin_count`
+            auto adjusted_subbin_id = subbin_id & (subbin_count - 1);
+
+            spargel_check(adjusted_bin_id < bin_count);
+            spargel_check(adjusted_subbin_id < subbin_count);
+
+            return BinResult{u8(adjusted_bin_id), u8(adjusted_subbin_id)};
+        }
+
+        u32 bin_bitmap;
+        base::InlineArray<u8, bin_count> subbin_bitmap;
     };
 
 }  // namespace spargel::gpu
