@@ -40,7 +40,8 @@ namespace spargel::gpu {
     // size   | [2^0, 2^8) | [2^8, 2^9) | [2^9, 2^10) | ... | [2^63, 2^64)
     // bin_id |     0      |      1     |      2      | ... |
     //
-    struct TlsfBinner {
+    class TlsfAllocator {
+    public:
         // The first bin has size `2 ** linear_bits`.
         // TODO: Maybe this should be 7.
         static constexpr u8 linear_bits = 8;
@@ -53,7 +54,7 @@ namespace spargel::gpu {
         static constexpr u8 bin_count = 64 - linear_bits + 1;
 
         struct BinResult {
-            u8 bin_id;
+            u16 bin_id;
             u8 subbin_id;
         };
 
@@ -64,7 +65,7 @@ namespace spargel::gpu {
         // this id we know the subbin size `2 ** bin_id / subbin_count`. Since
         // `subbin_count` is a power of 2, the subbin size can be written as
         // `2 ** (bin_id - subbin_bits)`.
-        BinResult binUp(usize size) const {
+        static BinResult binUp(usize size) {
             spargel_check(size != 0);
             // The unadjusted id in the range [8, 64)
             auto bin_id = 63 - __builtin_clzl(size | min_alloc_size);
@@ -83,9 +84,10 @@ namespace spargel::gpu {
             spargel_check(adjusted_bin_id < bin_count);
             spargel_check(adjusted_subbin_id < subbin_count);
 
-            return BinResult{u8(adjusted_bin_id), u8(adjusted_subbin_id)};
+            return BinResult{u16(adjusted_bin_id), u8(adjusted_subbin_id)};
         }
-        BinResult binDown(usize size) const {
+        // Similar to `binUp`. The only difference is that we round `size` down instead of up.
+        static BinResult binDown(usize size) {
             spargel_check(size != 0);
             // The unadjusted id in the range [8, 64)
             auto bin_id = 63 - __builtin_clzl(size | min_alloc_size);
@@ -102,6 +104,32 @@ namespace spargel::gpu {
 
             return BinResult{u8(adjusted_bin_id), u8(adjusted_subbin_id)};
         }
+
+        // Find a bin that contains a free block with enough space.
+        BinResult findBinWithFreeBlock(usize size) const {
+            auto [bin_id, subbin_id] = binUp(size);
+            // Filter out subbins with enough space.
+            auto avail_subbin = subbin_bitmaps[bin_id] & (0xFFFFFFFF << subbin_id);
+            if (avail_subbin == 0) {
+                // In this case, no subbin in this bin contains a free block.
+                // Then we should find the next free bin.
+                auto avail_bin = bin_bitmap & (0xFFFFFFFF << (bin_id + 1));
+                if (avail_bin == 0) {
+                    spargel_panic("no free block");
+                }
+                bin_id = (u16)__builtin_ctzl(avail_bin);
+                avail_bin = subbin_bitmaps[bin_id];
+                spargel_check(avail_subbin != 0);
+            }
+            subbin_id = (u8)__builtin_ctz(avail_subbin);
+            return BinResult{bin_id, subbin_id};
+        }
+
+    private:
+        // NOTE: We support up to 64 bins.
+        u64 bin_bitmap;
+        // NOTE: `subbin_count` is 32.
+        base::InlineArray<u32, bin_count> subbin_bitmaps;
     };
 
 }  // namespace spargel::gpu

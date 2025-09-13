@@ -5,7 +5,7 @@
 namespace spargel::gpu {
     namespace {
         void checkBinUp(usize size, u8 bin, u8 subbin) {
-            auto result = TlsfBinner{}.binUp(size);
+            auto result = TlsfAllocator::binUp(size);
             if (result.bin_id != bin || result.subbin_id != subbin) {
                 spargel_log_error("size: %zu, expected: (%d, %d) actual: (%d, %d)", size, bin,
                                   subbin, result.bin_id, result.subbin_id);
@@ -13,7 +13,7 @@ namespace spargel::gpu {
             }
         }
         void checkBinDown(usize size, u8 bin, u8 subbin) {
-            auto result = TlsfBinner{}.binDown(size);
+            auto result = TlsfAllocator::binDown(size);
             if (result.bin_id != bin || result.subbin_id != subbin) {
                 spargel_log_error("size: %zu, expected: (%d, %d) actual: (%d, %d)", size, bin,
                                   subbin, result.bin_id, result.subbin_id);
@@ -21,7 +21,7 @@ namespace spargel::gpu {
             }
         }
 
-        TEST(TlsfBinner_BinUp) {
+        TEST(TlsfAllocator_BinUp) {
             // NOTE: This is special.
             // NOTE: Nothing goes to the subbin 0.
             checkBinUp(1, 0, 1);
@@ -42,7 +42,7 @@ namespace spargel::gpu {
             checkBinUp(255, 1, 0);
             checkBinUp(256, 1, 0);
         }
-        TEST(TlsfBinner_BinDown) {
+        TEST(TlsfAllocator_BinDown) {
             // NOTE: This is special.
             // NOTE: Nothing goes to the subbin 0.
             checkBinDown(1, 0, 0);
