@@ -4,19 +4,35 @@
 
 namespace spargel::gpu {
     namespace {
-        void checkBin(TlsfBinner::BinResult result, u8 bin, u8 subbin) {
-            spargel_check(result.bin_id == bin);
-            spargel_check(result.subbin_id == subbin);
+        void checkBinUp(usize size, u8 bin, u8 subbin) {
+            auto result = TlsfBinner{}.binUp(size);
+            if (result.bin_id != bin || result.subbin_id != subbin) {
+                spargel_log_error("expected: (%d, %d) actual: (%d, %d)", bin, subbin,
+                                  result.bin_id, result.subbin_id);
+                spargel_panic_here();
+            }
         }
 
         TEST(TlsfBinner_Basic) {
-            TlsfBinner b;
             // NOTE: This is special.
-            checkBin(b.binUp(1), 0, 1);
-            checkBin(b.binUp(2), 0, 1);
-            checkBin(b.binUp(7), 0, 1);
-            checkBin(b.binUp(8), 0, 1);
-            checkBin(b.binUp(9), 0, 2);
+            // NOTE: Nothing goes to the subbin 0.
+            checkBinUp(1, 0, 1);
+            checkBinUp(2, 0, 1);
+            checkBinUp(7, 0, 1);
+            checkBinUp(8, 0, 1);
+            checkBinUp(9, 0, 2);
+            checkBinUp(15, 0, 2);
+            checkBinUp(16, 0, 2);
+            checkBinUp(17, 0, 3);
+            checkBinUp(24, 0, 3);
+            checkBinUp(25, 0, 4);
+            checkBinUp(31, 0, 4);
+            checkBinUp(32, 0, 4);
+            checkBinUp(247, 0, 31);
+            checkBinUp(248, 0, 31);
+            checkBinUp(249, 1, 0);
+            checkBinUp(255, 1, 0);
+            checkBinUp(256, 1, 0);
         }
     }  // namespace
 }  // namespace spargel::gpu

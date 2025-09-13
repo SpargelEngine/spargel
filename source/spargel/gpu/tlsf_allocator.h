@@ -58,7 +58,13 @@ namespace spargel::gpu {
         };
 
         // Find the smallest (sub)bin larger than the given size.
-        BinResult binUp(usize size) {
+        //
+        // Implementation detail:
+        // First we have the unadjusted bin id. It is valued in [8, 64). Based on
+        // this id we know the subbin size `2 ** bin_id / subbin_count`. Since
+        // `subbin_count` is a power of 2, the subbin size can be written as
+        // `2 ** (bin_id - subbin_bits)`.
+        BinResult binUp(usize size) const {
             spargel_check(size != 0);
             // The unadjusted id in the range [8, 64)
             auto bin_id = 63 - __builtin_clzl(size | min_alloc_size);
@@ -79,9 +85,6 @@ namespace spargel::gpu {
 
             return BinResult{u8(adjusted_bin_id), u8(adjusted_subbin_id)};
         }
-
-        u32 bin_bitmap;
-        base::InlineArray<u8, bin_count> subbin_bitmap;
     };
 
 }  // namespace spargel::gpu
