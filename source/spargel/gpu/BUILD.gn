@@ -6,6 +6,7 @@ source_set("gpu") {
     public = [
         "gpu_context.h",
         "gpu.h",
+        "tlsf_allocator.h"
     ]
     deps = [
         "//source/spargel/base",
@@ -29,5 +30,13 @@ executable("demo_gpu") {
     deps = [
         ":gpu",
         "//source/spargel/codec",
+    ]
+}
+
+executable("gpu_tests") {
+    sources = [ "tlsf_allocator_tests.cpp" ]
+    deps = [
+        ":gpu",
+        "//source/spargel/base:test_main",
     ]
 }
