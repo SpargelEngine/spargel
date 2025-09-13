@@ -85,6 +85,23 @@ namespace spargel::gpu {
 
             return BinResult{u8(adjusted_bin_id), u8(adjusted_subbin_id)};
         }
+        BinResult binDown(usize size) const {
+            spargel_check(size != 0);
+            // The unadjusted id in the range [8, 64)
+            auto bin_id = 63 - __builtin_clzl(size | min_alloc_size);
+            // log_2 of the size of each subbin in the chosen bin.
+            auto log2_subbin_size = bin_id - subbin_bits;
+            auto subbin_id = size >> log2_subbin_size;
+
+            auto adjusted_bin_id = u64(bin_id - linear_bits) + (subbin_id >> subbin_bits);
+            // Equivalent: `subbin_id % subbin_count`
+            auto adjusted_subbin_id = subbin_id & (subbin_count - 1);
+
+            spargel_check(adjusted_bin_id < bin_count);
+            spargel_check(adjusted_subbin_id < subbin_count);
+
+            return BinResult{u8(adjusted_bin_id), u8(adjusted_subbin_id)};
+        }
     };
 
 }  // namespace spargel::gpu
